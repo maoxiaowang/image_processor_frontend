@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import React, {useCallback, useState} from 'react';
 
 const useBackdrop = () => {
     const [backdropOpen, setBackdropOpen] = useState(false);
     const [backdropMessage, setBackdropMessage] = useState('');
 
-    const openBackdrop = (message='') => {
+    const openBackdrop = useCallback((message='') => {
         setBackdropMessage(message);
         setBackdropOpen(true);
-    };
+    }, []);
 
-    const closeBackdrop = () => {
+    const closeBackdrop = useCallback(() => {
         setBackdropOpen(false);
-    };
+    }, []);
 
     return {
         backdropOpen,

@@ -1,43 +1,43 @@
 import {useCallback} from "react";
-import {axiosInstance} from "../../services/axios";
-import API from "../../config/api";
+import {axiosInstance} from "../../../services/axios";
+import API from "../../../config/api";
 import {Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@mui/material";
 import Button from "@mui/material/Button";
 import * as React from "react";
 
 
-const TableMultiRowDeleteConfirmDialog = (
+const ImageDeleteDialog = (
     {
-        setRefresh,
-        selected,
-        setSelected,
-        dialogOpen,
-        dialogTitle,
-        dialogContent,
-        handleDialogClose
+        open,
+        title,
+        content,
+        onConfirm,
+        onClose
     }) => {
 
     return (
         <Dialog
-            open={dialogOpen}
-            onClose={handleDialogClose}
+            open={open}
+            onClose={onClose}
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description"
         >
             <DialogTitle id="alert-dialog-title">
-                {dialogTitle}
+                {title}
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id="alert-dialog-description">
-                    {dialogContent}
+                    {content}
                 </DialogContentText>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleDialogClose}>Cancel</Button>
-                <Button color="error" onClick={handleImageDeleteConfirm} autoFocus>
+                <Button onClick={onClose}>Cancel</Button>
+                <Button color="error" onClick={onConfirm} autoFocus>
                     Delete
                 </Button>
             </DialogActions>
         </Dialog>
     )
 }
+
+export default React.memo(ImageDeleteDialog);

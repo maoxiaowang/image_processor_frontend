@@ -2,21 +2,22 @@ import * as React from 'react';
 import {useFormik} from 'formik';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-import {Backdrop, CircularProgress, Grid} from "@mui/material";
+import {Grid} from "@mui/material";
 import '../../assets/styles/auth/Login.css'
-import Alert from '@mui/material/Alert';
 import {useNavigate} from 'react-router-dom';
 import ROUTES from "../../config/route";
 import {useSnackbar} from "../../context/useSnackbar";
 import {useAuth} from "../../context/useAuth";
 import Typography from "@mui/material/Typography";
 import InputContainer from "../../components/InputContainer";
+import DefaultBackdrop from "../../components/Backdrop/DefaultBackdrop";
+import useBackdrop from "../../hooks/useBackdrop";
 
 
 const LoginPage = () => {
 
-    const [loading, setLoading] = React.useState(false);
     const {openSnackbar} = useSnackbar();
+    const {backdropOpen, openBackdrop, closeBackdrop} = useBackdrop();
     const navigate = useNavigate();
 
     const auth = useAuth();
@@ -27,13 +28,14 @@ const LoginPage = () => {
             password: '',
         },
         onSubmit: async (values) => {
+            openBackdrop();
             try {
                 await auth.login(values.username, values.password)
                 navigate(ROUTES.homePage, {replace: true})
-            } catch (error) {
-                openSnackbar('登录失败，请检查用户名和密码', 'warning');
+            } catch (err) {
+                openSnackbar(err.message, "error")
             } finally {
-                setLoading(false);
+                closeBackdrop();
             }
         },
         validate: (values) => {
@@ -54,9 +56,7 @@ const LoginPage = () => {
     return (
         <>
             {/* 遮罩层 */}
-            <Backdrop open={loading} sx={{zIndex: (theme) => theme.zIndex.drawer + 1}}>
-                <CircularProgress sx={{color: "#fff"}}/>
-            </Backdrop>
+            <DefaultBackdrop open={backdropOpen}/>
             <Grid
                 container
                 justifyContent="center"
@@ -77,8 +77,11 @@ const LoginPage = () => {
                                 autoFocus
                             />
                             {formik.touched.username && formik.errors.username && (
-                                <Alert severity="error">{formik.errors.username}</Alert>
+                                <Typography variant="caption" color="error">
+                                    {formik.errors.username}
+                                </Typography>
                             )}
+
                         </InputContainer>
                         <InputContainer>
                             <TextField
@@ -88,7 +91,9 @@ const LoginPage = () => {
                                 fullWidth
                             />
                             {formik.touched.password && formik.errors.password && (
-                                <Alert severity="error">{formik.errors.password}</Alert>
+                                <Typography variant="caption" color="error">
+                                    {formik.errors.password}
+                                </Typography>
                             )}
                         </InputContainer>
                         <InputContainer>
@@ -100,7 +105,6 @@ const LoginPage = () => {
                 </Grid>
             </Grid>
         </>
-
     );
 };
 

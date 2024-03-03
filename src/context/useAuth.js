@@ -1,6 +1,6 @@
 import React from 'react';
-import {axiosInstance, baseAxiosInstance, originAxiosInstance} from "../services/axios";
 import API from "../config/api";
+import useAxios, {defaultAxios} from "../services/useAxios";
 
 const AuthContext = React.createContext(null);
 
@@ -11,11 +11,14 @@ export const AuthProvider = React.memo(({children}) => {
     const [userId, setUserId] = React.useState(null);
     const [token, setToken] = React.useState(null);
 
+
+    const {axiosInstance} = useAxios();
+
     // Get user server state
     React.useEffect(() => {
         const fetchAuthData = async () => {
             try {
-                const response = await originAxiosInstance.get(API.auth.whoami);
+                const response = await defaultAxios.get(API.auth.whoami);
                 const user = response.data;
                 setIsAuthenticated(!!user.id);
                 setUsername(user.username);
@@ -32,13 +35,14 @@ export const AuthProvider = React.memo(({children}) => {
 
     // Function to handle login and store tokens in cookies
     const login = (username, password) => {
-        return baseAxiosInstance.post(
+        return axiosInstance.post(
             API.auth.obtainToken, {
                 username: username,
                 password: password,
             })
             .then(
                 response => {
+                    console.log('response', response)
                     console.debug('login successfully')
                     setIsAuthenticated(true);
                     const data = response.data;

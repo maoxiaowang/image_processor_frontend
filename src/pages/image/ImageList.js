@@ -23,7 +23,7 @@ import {Container} from "@mui/system";
 import {Link as RouterLink} from 'react-router-dom';
 import ButtonAppBar from "../../components/AppBar";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {axiosInstance} from "../../services/axios";
+import useAxios from "../../services/useAxios";
 import API from "../../config/api";
 import {
     Avatar,
@@ -49,9 +49,10 @@ import InfoIcon from '@mui/icons-material/Info'
 import {format, parseISO} from 'date-fns';
 import '../../assets/styles/image/imageList.css';
 import {Field, Form, Formik} from "formik";
-import ErrorMessage from "../../components/form/ErrorMessage";
+import ErrorMessage from "../../components/Form/ErrorMessage";
 import {capitalize} from "../../utils";
 import {useSnackbar} from "../../context/useSnackbar";
+import DefaultBackdrop from "../../components/Backdrop/DefaultBackdrop";
 
 
 function descendingComparator(a, b, orderBy) {
@@ -87,15 +88,14 @@ function stableSort(array, comparator) {
 }
 
 
-const UploadModal = React.memo(({
-                                    setRefresh
-                                }) => {
-    const {
-        modalOpen: uploadModalOpen,
-        handleModalOpen: handleUploadModalOpen,
-        handleModalClose: handleUploadModalClose,
-    } = useModal();
-
+const UploadModal = React.memo((
+    {
+        open,
+        onClose,
+        handleModalClose,
+        setRefresh,
+        axiosInstance
+    }) => {
     // Modal
     const [previewUrl, setPreviewUrl] = useState('');
     const [selectedFile, setSelectedFile] = useState(null);
@@ -110,7 +110,7 @@ const UploadModal = React.memo(({
             const formData = new FormData(formRef.current);
             axiosInstance.post(API.image.imageUpload, formData)
                 .then(() => {
-                    handleUploadModalClose();
+                    handleModalClose();
                     // Optionally, reset selectedFile when modal is closed
                     setSelectedFile(null);
                     setRefresh(true)
@@ -137,8 +137,8 @@ const UploadModal = React.memo(({
 
     return (
         <Modal
-            open={uploadModalOpen}
-            onClose={handleUploadModalClose}
+            open={open}
+            onClose={onClose}
             aria-labelledby="modal-title"
             aria-describedby="modal-description"
         >
@@ -302,7 +302,8 @@ const DeleteConfirmDialog = (
         dialogOpen,
         dialogTitle,
         dialogContent,
-        handleDialogClose
+        handleDialogClose,
+        axiosInstance
     }) => {
     console.log('RUN DeleteConfirmDialog', selected)
     const handleImageDeleteConfirm = useCallback(() => {
@@ -314,7 +315,7 @@ const DeleteConfirmDialog = (
                 handleDialogClose();
                 setSelected([]);
             })
-    }, [selected, setRefresh, handleDialogClose, setSelected]);
+    }, [selected, setRefresh, handleDialogClose, setSelected, axiosInstance]);
 
     return (
         <Dialog
@@ -455,9 +456,13 @@ const ShowImageModal = (props) => {
                     </Grid>
                 </Grid>
                 {loading ? (
-        <Skeleton variant="rectangular" width="100%" >
+                        <div style={{ display: 'flex', height: '300px' }}>
+        <Skeleton variant="rectangular" width="100%" height='300px'
+                  align="center"
+                  component="div">
                 Loading
         </Skeleton>
+    </div>
                 ) : (
                     <img
                         src={src}
@@ -539,10 +544,12 @@ const ActionModal = (
         showImageSrc,
         showImageTitle,
         generateImageId,
-        setRefresh
+        setRefresh,
+        axiosInstance
     }) => {
 
     const {openSnackbar} = useSnackbar();
+
     const handleSaveAsOriginal = () => {
         axiosInstance.put(API.image.imageElevate.replace('{generatedImageId}', generateImageId), {})
             .then((response) => {
@@ -694,14 +701,22 @@ const EnhancedTable = React.memo((props) => {
     const {
         rows,
         setRefresh,
-        handleUploadModalOpen
+        axiosInstance
     } = props;
+
+    console.log('axiosInstance', axiosInstance)
 
     const [order, setOrder] = React.useState('asc');
     const [orderBy, setOrderBy] = React.useState('calories');
     const [selected, setSelected] = React.useState([]);
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
+
+    const {
+        modalOpen: uploadModalOpen,
+        handleModalOpen: handleUploadModalOpen,
+        handleModalClose: handleUploadModalClose,
+    } = useModal();
 
     // Dialog conformation
     const {
@@ -764,6 +779,7 @@ const EnhancedTable = React.memo((props) => {
     };
 
     const handleChangePage = (event, newPage) => {
+        console.log('handleChangePage')
         setPage(newPage);
     };
 
@@ -789,9 +805,8 @@ const EnhancedTable = React.memo((props) => {
     );
 
     // Action menu
-    const [menuAnchorEl, setMenuAnchorEl] = React.useState({});
+    const [menuAnchorEl, setMenuAnchorEl] = useState({});
 
-    // 使用 useCallback 确保函数引用不变
     const handleMenuOpen = useCallback((event, rowId) => {
         console.log('RUN handleMenuOpen')
         event.stopPropagation();
@@ -801,7 +816,6 @@ const EnhancedTable = React.memo((props) => {
         }));
     }, [setMenuAnchorEl]);
 
-    // 使用 useCallback 确保函数引用不变
     const handleMenuClose = useCallback((event, reason, rowId) => {
         console.log('RUN handleMenuClose', 'reason: ' + reason)
         event.stopPropagation();
@@ -854,7 +868,7 @@ const EnhancedTable = React.memo((props) => {
         }).catch((reason) => {
             console.log('reason', reason)
         })
-    }, [])
+    }, [setRefresh, axiosInstance])
 
     // 处理菜单项点击的逻辑
     const handleMenuItemClick = useCallback((event, action, rowId) => {
@@ -1103,11 +1117,11 @@ const EnhancedTable = React.memo((props) => {
     }
 
     const handleGenerationViewClick = (event, rowId, imageName) => {
+        event.stopPropagation();
         axiosInstance.get(API.image.imageDetail.replace('{imageId}', rowId))
             .then((response) => {
                 setGeneratedImageData(response.data.generations);
             })
-        event.stopPropagation();
         setGeneratedImagesModalTitle(`${imageName}`);
         setGeneratedImagesModalOpen(true);
     }
@@ -1126,7 +1140,7 @@ const EnhancedTable = React.memo((props) => {
                 <Table
                     sx={{minWidth: 750}}
                     aria-labelledby="tableTitle"
-                    size={'medium'}
+                    size="medium"
                 >
                     <EnhancedTableHead
                         numSelected={selected.length}
@@ -1253,7 +1267,7 @@ const EnhancedTable = React.memo((props) => {
                 handleShowImageModalClose={handleProcessedImageModalClose}
                 generateImageId={generatedImageId}
                 setRefresh={setRefresh}
-
+                axiosInstance={axiosInstance}
             />
             <GeneratedImagesModal
                 title={generatedImagesModalTitle}
@@ -1270,6 +1284,14 @@ const EnhancedTable = React.memo((props) => {
                 dialogContent={dialogContent}
                 dialogTitle={dialogTitle}
                 handleDialogClose={handleDialogClose}
+                axiosInstance={axiosInstance}
+            />
+            <UploadModal
+                open={uploadModalOpen}
+                onClose={handleUploadModalClose}
+                handleModalClose={handleUploadModalClose}
+                setRefresh={setRefresh}
+                axiosInstance={axiosInstance}
             />
         </Paper>
     );
@@ -1278,14 +1300,14 @@ const EnhancedTable = React.memo((props) => {
 
 export default function ImageListPage() {
     console.log('RUN ImageListPage')
+    const {backdropOpen, axiosInstance} = useAxios();
 
     useEffect(() => {
         console.log('ImageListPage component mounted');
-    }, []); // 空数组表示只在组件挂载时执行
+    }, []);
 
     // Table
     const [rows, setRows] = React.useState([]);
-
     // Data refreshing
     const [refresh, setRefresh] = React.useState(true);
     useEffect(() => {
@@ -1302,10 +1324,8 @@ export default function ImageListPage() {
                 .finally(() => {
                     setRefresh(false);
                 });
-            setRefresh(false)
         }
-    }, [refresh]);
-
+    }, [refresh, axiosInstance]);
 
     return (
         <Container>
@@ -1325,18 +1345,10 @@ export default function ImageListPage() {
 
             <EnhancedTable
                 rows={rows}
-                setRows={setRows}
-                handleUploadModalOpen={handleUploadModalOpen}
                 setRefresh={setRefresh}
+                axiosInstance={axiosInstance}
             />
-            <UploadModal
-                open={uploadModalOpen}
-                onClose={handleUploadModalClose}
-                handleModalClose={handleUploadModalClose}
-                setRefresh={setRefresh}
-            />
-
-
+            <DefaultBackdrop open={backdropOpen}/>
         </Container>
     )
 }
