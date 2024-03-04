@@ -13,3 +13,7 @@
 .originalImage {
   max-width: 100%;
 }
+
+.jsonField {
+  font-family: initial;
+}

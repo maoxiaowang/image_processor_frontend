@@ -23,7 +23,7 @@ import {Container} from "@mui/system";
 import {Link as RouterLink} from 'react-router-dom';
 import ButtonAppBar from "../../components/AppBar";
 import {useCallback, useEffect, useRef, useState} from "react";
-import useAxios from "../../services/useAxios";
+import useAxios, {defaultAxios} from "../../services/useAxios";
 import API from "../../config/api";
 import {
     Avatar,
@@ -50,9 +50,10 @@ import {format, parseISO} from 'date-fns';
 import '../../assets/styles/image/imageList.css';
 import {Field, Form, Formik} from "formik";
 import ErrorMessage from "../../components/Form/ErrorMessage";
-import {capitalize} from "../../utils";
+import {capitalize, parseJsonString} from "../../utils";
 import {useSnackbar} from "../../context/useSnackbar";
 import DefaultBackdrop from "../../components/Backdrop/DefaultBackdrop";
+import ReactJson from '@microlink/react-json-view'
 
 
 function descendingComparator(a, b, orderBy) {
@@ -294,7 +295,7 @@ EnhancedTableHead.propTypes = {
 };
 
 
-const DeleteConfirmDialog = (
+const DeleteConfirmDialog = React.memo((
     {
         setRefresh,
         selected,
@@ -340,7 +341,7 @@ const DeleteConfirmDialog = (
             </DialogActions>
         </Dialog>
     )
-}
+});
 
 
 const EnhancedTableToolbar = React.memo((props) => {
@@ -605,7 +606,7 @@ const ActionModal = (
 };
 
 
-const GeneratedImagesModal = (
+const GeneratedImagesModal = React.memo((
     {
         open,
         handleClose,
@@ -700,7 +701,7 @@ const GeneratedImagesModal = (
       </Modal>
 
   )
-}
+});
 
 
 const EnhancedTable = React.memo((props) => {
@@ -710,8 +711,6 @@ const EnhancedTable = React.memo((props) => {
         setRefresh,
         axiosInstance
     } = props;
-
-    console.log('axiosInstance', axiosInstance)
 
     const [order, setOrder] = React.useState('asc');
     const [orderBy, setOrderBy] = React.useState('calories');
@@ -878,10 +877,22 @@ const EnhancedTable = React.memo((props) => {
     }, [setRefresh, axiosInstance])
 
     // 处理菜单项点击的逻辑
-    const handleMenuItemClick = useCallback((event, action, rowId) => {
-        console.log('RUN handleMenuItemClick', event, action, rowId)
+    const [detectedInfo, setDetectedInfo] = useState(null);
+
+    const handleMenuItemClick = (event, action, rowId) => {
+        console.log('RUN handleMenuItemClick')
         event.preventDefault();
         event.stopPropagation();
+
+        const handleDetectSubmit = (action, rowId, values) => {
+            const url = API.image.imageProcess.replace('{imageId}', rowId).replace('{action}', action)
+            axiosInstance.put(url, values).then((response) => {
+                console.log('1111111111', response.data.detected_info)
+                setDetectedInfo(response.data.detected_info)
+            }).catch((reason) => {
+                console.log('reason', reason)
+            })
+        };
 
         let modelContent = '';
         switch (action) {
@@ -958,10 +969,6 @@ const EnhancedTable = React.memo((props) => {
                                 const errors = {};
                                 if (!values.axis) {
                                     errors.axis = 'Axis is required.';
-                                } else if (
-                                    !/^[1-9]\d*$/.test(values.axis)
-                                ) {
-                                    errors.axis = 'A positive integer is required.';
                                 }
                                 return errors;
                             }}
@@ -972,15 +979,19 @@ const EnhancedTable = React.memo((props) => {
                         >
                             {({isSubmitting}) => (
                                 <Form>
-                                    <Field
-                                        type="number"
-                                        name="axis"
-                                        as={TextField}
-                                        label="Axis"
-                                        fullWidth
-                                        margin="normal"
-                                        variant="outlined"
-                                    />
+                                    <FormControl fullWidth>
+                                        <InputLabel id="demo-simple-select-label">Axis</InputLabel>
+                                        <Field
+                                            as={Select}
+                                            name="axis"
+                                            labelId="flip-axis-label"
+                                            label="Axis"
+                                            fullWidth
+                                        >
+                                            <MenuItem value="0">0</MenuItem>
+                                            <MenuItem value="1">1</MenuItem>
+                                        </Field>
+                                    </FormControl>
                                     <ErrorMessage name="axis"/>
                                     <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={26}
                                          sx={{marginTop: (theme) => theme.spacing(2)}}>
@@ -1089,8 +1100,40 @@ const EnhancedTable = React.memo((props) => {
                 };
                 break;
             case 'detect':
+                console.log('rowId', rowId)
+                defaultAxios.get(API.image.imageDetail.replace('{imageId}', rowId))
+                    .then((response) => {
+                        console.log('response.data.detected_info', response.data.detected_info, typeof response.data.detected_info)
+                        const jsonObject = JSON.parse(response.data.detected_info)
+                        console.log('jsonObject', jsonObject, typeof jsonObject)
+                        setDetectedInfo(response.data.detected_info);
+                    })
+
                 modelContent = () => {
-                    <></>
+                    return (
+                        <Formik
+                            onSubmit={(values, {setSubmitting}) => {
+                                handleDetectSubmit(action, rowId, values);
+                                setSubmitting(false);
+                            }}
+                            initialValues={{}}>
+                            {({isSubmitting}) => (
+                                <Form>
+                                    {/*<ReactJson src={detectedInfo} name={false} style={{fontFamily: "initial"}} />*/}
+                                    <Box>
+                                        {detectedInfo}
+                                    </Box>
+                                    <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={26}
+                                         sx={{marginTop: (theme) => theme.spacing(2)}}>
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            Detect
+                                        </Button>
+                                        <Button onClick={handleActionModalClose}>Close</Button>
+                                    </Box>
+                                </Form>
+                            )}
+                        </Formik>
+                    )
                 };
                 break
             default:
@@ -1105,7 +1148,7 @@ const EnhancedTable = React.memo((props) => {
             ...prevMenuAnchorEl,
             [rowId]: null,
         }));
-    }, [setActionModalTitle, setActionModalContent, handleActionModalOpen, handleActionModalClose, handleActionSubmit]);
+    };
 
     const handleThumbnailClick = useCallback((event, originalImage, originalImageName) => {
         event.stopPropagation();
@@ -1209,7 +1252,7 @@ const EnhancedTable = React.memo((props) => {
                                     <TableCell align="left">{`${row.width}x${row.height}`}</TableCell>
                                     <TableCell align="left">{row.user.username}</TableCell>
                                     <TableCell
-                                        align="left">{format(parseISO(row.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                                        align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
                                     <TableCell align="left">{
                                         row.generation_num > 0 ?
                                             <Button size="small"
