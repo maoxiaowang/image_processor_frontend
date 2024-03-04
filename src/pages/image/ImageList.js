@@ -528,6 +528,13 @@ const RowActionMenu = React.memo((
                 </ListItemIcon>
                 旋转
             </MenuItem>
+            <MenuItem
+                onClick={(event) => handleMenuItemClick(event, 'detect', rowId)}>
+                <ListItemIcon>
+                    <RotateIcon fontSize="small"/>
+                </ListItemIcon>
+                靶点检测
+            </MenuItem>
         </Menu>
     )
 });
@@ -876,7 +883,7 @@ const EnhancedTable = React.memo((props) => {
         event.preventDefault();
         event.stopPropagation();
 
-        let modelContent = '<></>';
+        let modelContent = '';
         switch (action) {
             case 'crop':
                 // 处理裁剪操作
@@ -1081,6 +1088,11 @@ const EnhancedTable = React.memo((props) => {
                     )
                 };
                 break;
+            case 'detect':
+                modelContent = () => {
+                    <></>
+                };
+                break
             default:
                 break;
         }
