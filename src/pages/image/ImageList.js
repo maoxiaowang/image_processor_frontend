@@ -50,7 +50,7 @@ import {format, parseISO} from 'date-fns';
 import '../../assets/styles/image/imageList.css';
 import {Field, Form, Formik} from "formik";
 import ErrorMessage from "../../components/Form/ErrorMessage";
-import {capitalize, parseJsonString} from "../../utils";
+import {capitalize} from "../../utils";
 import {useSnackbar} from "../../context/useSnackbar";
 import DefaultBackdrop from "../../components/Backdrop/DefaultBackdrop";
 import ReactJson from '@microlink/react-json-view'

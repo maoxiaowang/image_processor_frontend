@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 
 const useBackdrop = () => {
     const [backdropOpen, setBackdropOpen] = useState(false);
