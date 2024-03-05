@@ -140,8 +140,8 @@ const UploadModal = React.memo((
         <Modal
             open={open}
             onClose={onClose}
-            aria-labelledby="modal-title"
-            aria-describedby="modal-description"
+            aria-labelledby="upload-modal-title"
+            aria-describedby="upload-modal-description"
         >
             <Box sx={{
                 position: 'absolute',
@@ -155,7 +155,7 @@ const UploadModal = React.memo((
                 p: 4,
             }}>
                 <Typography variant="h5" component="h2">Upload Image</Typography>
-                <p id="modal-description">Select an image to upload.</p>
+                <p id="upload-modal-description">Select an image to upload.</p>
                 <form method="post" ref={formRef}>
                     <TextField
                         type="text"
@@ -216,7 +216,7 @@ function EnhancedTableHead(props) {
             id: 'size',
             numeric: false,
             disablePadding: false,
-            label: 'Size',
+            label: 'Size (W x H)',
         },
         {
             id: 'user',
@@ -229,6 +229,12 @@ function EnhancedTableHead(props) {
             numeric: false,
             disablePadding: false,
             label: 'Created At',
+        },
+        {
+            id: 'detection',
+            numeric: false,
+            disablePadding: false,
+            label: 'Detection',
         },
         {
             id: 'generations',
@@ -442,8 +448,8 @@ const ShowImageModal = (props) => {
         <Modal
             open={open}
             onClose={onClose}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
+            aria-labelledby="show-modal-title"
+            aria-describedby="show-modal-description"
         >
             <Box className="showImageModalBox">
                 <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
@@ -529,13 +535,6 @@ const RowActionMenu = React.memo((
                 </ListItemIcon>
                 旋转
             </MenuItem>
-            <MenuItem
-                onClick={(event) => handleMenuItemClick(event, 'detect', rowId)}>
-                <ListItemIcon>
-                    <RotateIcon fontSize="small"/>
-                </ListItemIcon>
-                靶点检测
-            </MenuItem>
         </Menu>
     )
 });
@@ -571,8 +570,8 @@ const ActionModal = (
     <Modal
       open={open}
       onClose={onClose}
-      aria-labelledby="modal-title"
-      aria-describedby="modal-description"
+      aria-labelledby="action-modal-title"
+      aria-describedby="action-modal-description"
     >
       <Box
         sx={{
@@ -704,6 +703,50 @@ const GeneratedImagesModal = React.memo((
 });
 
 
+const DetectViewModal = React.memo((
+    {
+        open,
+        handleClose,
+        title,
+        jsonObject,
+        onDetect
+    }) => {
+
+  return (
+      <Modal
+          open={open}
+          onClose={handleClose}
+          aria-labelledby="modal-modal-title"
+          aria-describedby="modal-modal-description"
+          sx={{overflow:'scroll'}}
+      >
+          <Box className="showImageModalBox">
+              <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
+                  <Grid item xs={8}>
+                      <Typography variant="h6" component="h2">
+                          {title}
+                      </Typography>
+                  </Grid>
+                  <Grid item xs={4} textAlign="right">
+                      <Button onClick={handleClose}>Close</Button>
+                  </Grid>
+              </Grid>
+              <Box sx={{marginY: (theme) => theme.spacing(4)}}>
+                  <ReactJson src={jsonObject} name={false} style={{fontFamily: 'initial'}} />
+              </Box>
+              <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
+                  <Grid item xs={4} textAlign="left">
+                      <Button onClick={(event) => onDetect(event)}>Detect</Button>
+                  </Grid>
+              </Grid>
+          </Box>
+      </Modal>
+
+  )
+});
+
+
+
 const EnhancedTable = React.memo((props) => {
     console.log('RUN EnhancedTable', props)
     const {
@@ -712,11 +755,12 @@ const EnhancedTable = React.memo((props) => {
         axiosInstance
     } = props;
 
-    const [order, setOrder] = React.useState('asc');
-    const [orderBy, setOrderBy] = React.useState('calories');
+    const [order, setOrder] = React.useState('desc');
+    const [orderBy, setOrderBy] = React.useState('id');
     const [selected, setSelected] = React.useState([]);
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(5);
+    const [openedRowId, setOpenedRowId] = useState(0);
 
     const {
         modalOpen: uploadModalOpen,
@@ -811,7 +855,7 @@ const EnhancedTable = React.memo((props) => {
     );
 
     // Action menu
-    const [menuAnchorEl, setMenuAnchorEl] = useState({});
+    const [menuAnchorEl, setMenuAnchorEl] = useState({msg: "loading"});
 
     const handleMenuOpen = useCallback((event, rowId) => {
         console.log('RUN handleMenuOpen')
@@ -841,10 +885,10 @@ const EnhancedTable = React.memo((props) => {
     } = useModal();
     const [generatedImageId, setGeneratedImage] = useState(null);
 
-    const handleActionModalOpen = useCallback((action) => {
+    const handleActionModalOpen = useCallback((action, rowId) => {
         console.log('handleActionModalOpen')
         setActionModalTitle(capitalize(action));
-        setActionModalOpen(true)
+        setActionModalOpen(true);
     }, [setActionModalOpen, setActionModalTitle])
 
     const handleActionModalClose = useCallback(() => {
@@ -877,22 +921,48 @@ const EnhancedTable = React.memo((props) => {
     }, [setRefresh, axiosInstance])
 
     // 处理菜单项点击的逻辑
-    const [detectedInfo, setDetectedInfo] = useState(null);
+    const [detectModalTitle, setDetectModalTitle] = useState('');
+    const [detectModalOpen, setDetectModalOpen] = useState(false);
+    const [detectModalJsonObject, setDetectModalJsonObject] = useState({msg: "loading"});
+
+    const handleDetectModalOpen = (rowId) => {
+        setOpenedRowId(rowId);
+        setDetectModalOpen(true)
+    }
+    const handleDetectModalClose = () => {
+        setDetectModalOpen(false);
+        setOpenedRowId(0);
+    }
+    const handleDetectViewClick = (event, rowId, imageName) => {
+        event.stopPropagation();
+         console.log('handleDetectViewClick')
+        setDetectModalTitle(imageName)
+        handleDetectModalOpen(rowId)
+
+        defaultAxios.get(API.image.imageDetail.replace('{imageId}', rowId))
+            .then((response) => {
+                const jsonObject = JSON.parse(response.data.detected_info)
+                setDetectModalJsonObject(jsonObject)
+            })
+    }
+
+    const handleImageDetectSubmit = (event) => {
+        console.log('handleImageDetectSubmit', openedRowId)
+        event.preventDefault();
+        const url = API.image.imageProcess.replace('{imageId}', String(openedRowId)).replace('{action}', 'detect')
+        axiosInstance.put(url, {}).then((response) => {
+            const jsonObject = JSON.parse(response.data.detected_info);
+            setDetectModalJsonObject(jsonObject);
+            setRefresh(true);
+        }).catch((reason) => {
+            console.log('reason', reason)
+        })
+    };
 
     const handleMenuItemClick = (event, action, rowId) => {
         console.log('RUN handleMenuItemClick')
         event.preventDefault();
         event.stopPropagation();
-
-        const handleDetectSubmit = (action, rowId, values) => {
-            const url = API.image.imageProcess.replace('{imageId}', rowId).replace('{action}', action)
-            axiosInstance.put(url, values).then((response) => {
-                console.log('1111111111', response.data.detected_info)
-                setDetectedInfo(response.data.detected_info)
-            }).catch((reason) => {
-                console.log('reason', reason)
-            })
-        };
 
         let modelContent = '';
         switch (action) {
@@ -1099,55 +1169,20 @@ const EnhancedTable = React.memo((props) => {
                     )
                 };
                 break;
-            case 'detect':
-                console.log('rowId', rowId)
-                defaultAxios.get(API.image.imageDetail.replace('{imageId}', rowId))
-                    .then((response) => {
-                        console.log('response.data.detected_info', response.data.detected_info, typeof response.data.detected_info)
-                        const jsonObject = JSON.parse(response.data.detected_info)
-                        console.log('jsonObject', jsonObject, typeof jsonObject)
-                        setDetectedInfo(response.data.detected_info);
-                    })
-
-                modelContent = () => {
-                    return (
-                        <Formik
-                            onSubmit={(values, {setSubmitting}) => {
-                                handleDetectSubmit(action, rowId, values);
-                                setSubmitting(false);
-                            }}
-                            initialValues={{}}>
-                            {({isSubmitting}) => (
-                                <Form>
-                                    {/*<ReactJson src={detectedInfo} name={false} style={{fontFamily: "initial"}} />*/}
-                                    <Box>
-                                        {detectedInfo}
-                                    </Box>
-                                    <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={26}
-                                         sx={{marginTop: (theme) => theme.spacing(2)}}>
-                                        <Button type="submit" disabled={isSubmitting}>
-                                            Detect
-                                        </Button>
-                                        <Button onClick={handleActionModalClose}>Close</Button>
-                                    </Box>
-                                </Form>
-                            )}
-                        </Formik>
-                    )
-                };
-                break
             default:
                 break;
         }
 
         setActionModalTitle(capitalize(action))
         setActionModalContent(modelContent)
-        handleActionModalOpen(action);
+        handleActionModalOpen(action, rowId);
 
         setMenuAnchorEl((prevMenuAnchorEl) => ({
             ...prevMenuAnchorEl,
             [rowId]: null,
         }));
+
+
     };
 
     const handleThumbnailClick = useCallback((event, originalImage, originalImageName) => {
@@ -1167,9 +1202,9 @@ const EnhancedTable = React.memo((props) => {
     const [generatedImagesModalOpen, setGeneratedImagesModalOpen] = useState(false);
     const [generatedImageData, setGeneratedImageData] = useState([]);
 
-    const handleGeneratedImagesModalClose = () => {
+    const handleGeneratedImagesModalClose = useCallback(() => {
         setGeneratedImagesModalOpen(false);
-    }
+    }, []);
 
     const handleGenerationViewClick = (event, rowId, imageName) => {
         event.stopPropagation();
@@ -1251,13 +1286,14 @@ const EnhancedTable = React.memo((props) => {
                                     </TableCell>
                                     <TableCell align="left">{`${row.width}x${row.height}`}</TableCell>
                                     <TableCell align="left">{row.user.username}</TableCell>
-                                    <TableCell
-                                        align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                                    <TableCell align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                                    <TableCell align="left">{
+                                        <Button onClick={(event) => handleDetectViewClick(event, row.id, row.name)} size="small">View</Button>
+                                    }
+                                    </TableCell>
                                     <TableCell align="left">{
                                         row.generation_num > 0 ?
-                                            <Button size="small"
-                                                    onClick={(event) => handleGenerationViewClick(event, row.id, row.name)}
-                                            >
+                                            <Button size="small" onClick={(event) => handleGenerationViewClick(event, row.id, row.name)}>
                                                 View
                                             </Button> : <Button size="small" disabled>View</Button>
                                     }
@@ -1324,6 +1360,13 @@ const EnhancedTable = React.memo((props) => {
                 setRefresh={setRefresh}
                 axiosInstance={axiosInstance}
             />
+            <DetectViewModal
+                open={detectModalOpen}
+                title={detectModalTitle}
+                handleClose={handleDetectModalClose}
+                jsonObject={detectModalJsonObject}
+                onDetect={handleImageDetectSubmit}
+            />
             <GeneratedImagesModal
                 title={generatedImagesModalTitle}
                 handleClose={handleGeneratedImagesModalClose}
@@ -1368,6 +1411,7 @@ export default function ImageListPage() {
     useEffect(() => {
         if (refresh) {
             console.log('useEffect refreshData')
+            setRefresh(false);
             axiosInstance.get(API.image.imageList)
                 .then(response => {
                     console.log(response.data);
@@ -1376,9 +1420,6 @@ export default function ImageListPage() {
                 .catch(error => {
                     console.error('Error fetching data:', error);
                 })
-                .finally(() => {
-                    setRefresh(false);
-                });
         }
     }, [refresh, axiosInstance]);
 

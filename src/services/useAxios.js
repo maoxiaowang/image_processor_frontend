@@ -61,9 +61,9 @@ const useAxios = () => {
                         // 如果响应状态码是 401，执行重定向到登录页面的操作
                         openSnackbar('请登录后操作', "warning");
                     } else if (errStatus === 404) {
-                        openSnackbar(error.response.message)
+                        openSnackbar('Not found', 'warning')
                     } else if (errStatus >= 500) {
-                        openSnackbar(error.response.statusText, 'error')
+                        openSnackbar('Server error', 'error')
                     } else {
                         openSnackbar(error.response.data.detail, 'error')
                     }

@@ -26,7 +26,7 @@ const App = () => {
                 // Redirect to login page
                 navigate(ROUTES.auth.loginPage, {replace: true});
             }
-        }, [isAuthenticated]);
+        }, [isAuthenticated, navigate]);
 
         // Render the protected route or redirect to login page based on isAuthenticated
         return isAuthenticated ? element : null; // Return null if not authenticated

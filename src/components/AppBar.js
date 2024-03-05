@@ -49,7 +49,7 @@ const ButtonAppBar = React.memo(() => {
                         <MenuIcon/>
                     </IconButton>
                     <Typography variant="h6" component="div" sx={{flexGrow: 1}}>
-                        React
+
                     </Typography>
                     {isAuthenticated ? (
                         <Typography color="inherit">Welcome, {username}
