@@ -605,102 +605,105 @@ const ActionModal = (
 };
 
 
-const GeneratedImagesModal = React.memo((
-    {
-        open,
-        handleClose,
-        title,
-        data,
-    }) => {
+const GeneratedImagesDialog = React.memo((
+  {
+    open,
+    handleClose,
+    title,
+    data,
+  }) => {
     const [innerModalOpen, setInnerModalOpen] = useState(false);
     const [innerModalTitle, setInnerModalTitle] = useState('');
     const [innerModalImageSrc, setInnerModalImageSrc] = useState('');
 
     const handleInnerModalOpen = useCallback((src, action, id) => {
-        setInnerModalTitle(`${action}-${id}`);
-        setInnerModalImageSrc(src);
-        setInnerModalOpen(true);
+      setInnerModalTitle(`${action}-${id}`);
+      setInnerModalImageSrc(src);
+      setInnerModalOpen(true);
     }, []);
+
     const handleInnerModalClose = useCallback(() => {
-        setInnerModalOpen(false)
+      setInnerModalOpen(false);
     }, []);
+
     const renderActionIcon = (action) => {
-        console.log(action)
-        switch (action.toLowerCase()) {
-            case 'crop':
-                return <CropIcon/>;
-            case 'flip':
-                return <FlipIcon/>;
-            // 可以根据需要添加更多的 case
-            case 'rotate':
-                return <RotateIcon/>
-            case 'blur':
-                return <BlurIcon/>
-            default:
-                return <InfoIcon/>;
-        }
+      switch (action.toLowerCase()) {
+        case 'crop':
+          return <CropIcon />;
+        case 'flip':
+          return <FlipIcon />;
+        case 'rotate':
+          return <RotateIcon />;
+        case 'blur':
+          return <BlurIcon />;
+        default:
+          return <InfoIcon />;
+      }
     };
-  return (
-      <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-          sx={{overflow:'scroll'}}
+
+    return (
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
       >
-          <Box className="showImageModalBox">
-              <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
-                  <Grid item xs={8}>
-                      <Typography variant="h6" component="h2">
-                          {title}
-                      </Typography>
-                  </Grid>
-                  <Grid item xs={4} textAlign="right">
-                      <Button onClick={handleClose}>Close</Button>
-                  </Grid>
-              </Grid>
-              <ImageList variant="masonry" cols={2} gap={8}>
-                  {data.map((item) => (
-                      <ImageListItem key={item.id}>
-                          <Tooltip title="Click to see original image" placement="top">
-                              <img
-                                  srcSet={`${item.processed_image}?w=248&fit=crop&auto=format&dpr=2 2x`}
-                                  src={`${item.processed_image}?w=248&fit=crop&auto=format`}
-                                  alt={item.action}
-                                  loading="lazy"
-                                  onClick={() => handleInnerModalOpen(item.processed_image, item.action, item.id)}
-                                  style={{ width: '100%', cursor: 'pointer' }}
-                              />
-                          </Tooltip>
-                          <ImageListItemBar
-                              title={`${item.action}-${item.id}`}
-                              subtitle={`${item.width}x${item.height}`}
-                              actionIcon={
-                                  <IconButton
-                                      sx={{color: 'rgba(255, 255, 255, 0.54)'}}
-                                      aria-label={`info about ${item.action}`}
-                                  >
-                                      {renderActionIcon(item.action)}
-                                  </IconButton>
-                              }
-                              position="below"
-                          />
-                      </ImageListItem>
+        <DialogTitle>
+          <Grid container spacing={2} sx={{ marginBottom: (theme) => theme.spacing(1) }}>
+            <Grid item xs={8}>
+              <Typography variant="h6" component="h2">
+                {title}
+              </Typography>
+            </Grid>
+            <Grid item xs={4} textAlign="right">
+              <Button onClick={handleClose}>Close</Button>
+            </Grid>
+          </Grid>
+        </DialogTitle>
+        <DialogContent dividers sx={{ overflowY: 'scroll' }}>
+          <ImageList variant="masonry" cols={4} gap={8}>
+            {data.map((item) => (
+              <ImageListItem key={item.id}>
+                <Tooltip title="Click to see original image" placement="top">
+                  <img
+                    srcSet={`${item.processed_image}?w=248&fit=crop&auto=format&dpr=2 2x`}
+                    src={`${item.processed_image}?w=248&fit=crop&auto=format`}
+                    alt={item.action}
+                    loading="lazy"
+                    onClick={() => handleInnerModalOpen(item.processed_image, item.action, item.id)}
+                    style={{ width: '100%', cursor: 'pointer' }}
+                  />
+                </Tooltip>
+                <ImageListItemBar
+                  title={`${item.action}-${item.id}`}
+                  subtitle={`${item.width}x${item.height}`}
+                  actionIcon={
+                    <IconButton
+                      sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
+                      aria-label={`info about ${item.action}`}
+                    >
+                      {renderActionIcon(item.action)}
+                    </IconButton>
+                  }
+                  position="below"
+                />
+              </ImageListItem>
+            ))}
+          </ImageList>
 
-                  ))}
-              </ImageList>
+          <ShowImageModal
+            open={innerModalOpen}
+            onClose={handleInnerModalClose}
+            src={innerModalImageSrc}
+            title={innerModalTitle}
 
-              <ShowImageModal
-              open={innerModalOpen}
-              onClose={handleInnerModalClose}
-              src={innerModalImageSrc}
-              title={innerModalTitle}
           />
-          </Box>
-      </Modal>
-
-  )
-});
+        </DialogContent>
+      </Dialog>
+    );
+  });
 
 
 const DetectViewModal = React.memo((
@@ -1367,7 +1370,7 @@ const EnhancedTable = React.memo((props) => {
                 jsonObject={detectModalJsonObject}
                 onDetect={handleImageDetectSubmit}
             />
-            <GeneratedImagesModal
+            <GeneratedImagesDialog
                 title={generatedImagesModalTitle}
                 handleClose={handleGeneratedImagesModalClose}
                 open={generatedImagesModalOpen}
@@ -1414,7 +1417,6 @@ export default function ImageListPage() {
             setRefresh(false);
             axiosInstance.get(API.image.imageList)
                 .then(response => {
-                    console.log(response.data);
                     setRows(response.data.results);
                 })
                 .catch(error => {
