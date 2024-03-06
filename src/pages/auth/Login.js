@@ -16,8 +16,8 @@ import useBackdrop from "../../hooks/useBackdrop";
 
 const LoginPage = () => {
 
-    const {openSnackbar} = useSnackbar();
     const {backdropOpen, openBackdrop, closeBackdrop} = useBackdrop();
+    const {openSnackbar} = useSnackbar();
     const navigate = useNavigate();
 
     const auth = useAuth();
@@ -33,7 +33,7 @@ const LoginPage = () => {
                 await auth.login(values.username, values.password)
                 navigate(ROUTES.homePage, {replace: true})
             } catch (err) {
-                openSnackbar(err.message, "error")
+                openSnackbar('用户名不存在或密码错误', "error")
             } finally {
                 closeBackdrop();
             }

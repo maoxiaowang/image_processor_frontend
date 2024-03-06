@@ -38,9 +38,9 @@ const useAxios = () => {
             (error) => {
                 closeBackdrop();
                 if (error.response) {
-                    const errStatus = error.response.status
+                    const errStatus = error.response.status;
+                    console.log('errStatus', errStatus)
                     if (errStatus === 400) {
-                        console.log('........................400')
                         const errData = error.response.data;
                         if (Array.isArray(errData)) {
                             errData.forEach((error) => {
@@ -58,16 +58,26 @@ const useAxios = () => {
                         }
                         return Promise.reject(error)
                     } else if (errStatus === 401) {
+                        console.log('..........  401')
                         // 如果响应状态码是 401，执行重定向到登录页面的操作
-                        openSnackbar('请登录后操作', "warning");
+                        openSnackbar('Unauthorized', "error");
+                    } else if (errStatus === 403) {
+                        openSnackbar('You have no permission', 'warning')
                     } else if (errStatus === 404) {
                         openSnackbar('Not found', 'warning')
                     } else if (errStatus >= 500) {
                         openSnackbar('Server error', 'error')
                     } else {
-                        openSnackbar(error.response.data.detail, 'error')
+                        console.log(error.response)
+                        // openSnackbar(error.response.data.detail, 'error')
                     }
                     return Promise.reject(error); // 返回一个被拒绝的 Promise，以便在调用方处理
+                } else {
+                    if (error.code === 'ERR_NETWORK') {
+                        openSnackbar('Network error', "error");
+                    } else {
+                        openSnackbar('System error', 'error')
+                    }
                 }
                 // 处理其他响应错误
                 return Promise.reject(error);

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import PropTypes from 'prop-types';
 import {alpha} from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -22,18 +23,33 @@ import {visuallyHidden} from '@mui/utils';
 import {Container} from "@mui/system";
 import {Link as RouterLink} from 'react-router-dom';
 import ButtonAppBar from "../../components/AppBar";
-import {useCallback, useEffect, useRef, useState} from "react";
 import useAxios, {defaultAxios} from "../../services/useAxios";
 import API from "../../config/api";
 import {
     Avatar,
     Breadcrumbs,
-    Dialog, DialogActions,
+    Dialog,
+    DialogActions,
     DialogContent,
     DialogContentText,
-    DialogTitle, FormControl, Grid, ImageList, ImageListItem, ImageListItemBar, InputLabel,
-    Link, ListItemIcon, Menu, MenuItem,
-    Modal, Select, Skeleton
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    FormGroup,
+    FormHelperText,
+    Grid,
+    ImageList,
+    ImageListItem,
+    ImageListItemBar,
+    InputLabel,
+    Link,
+    ListItemIcon,
+    Menu,
+    MenuItem,
+    Modal,
+    Select,
+    Skeleton,
+    Switch
 } from "@mui/material";
 import ROUTES from "../../config/route";
 import useModal from "../../hooks/useModal";
@@ -54,6 +70,8 @@ import {capitalize} from "../../utils";
 import {useSnackbar} from "../../context/useSnackbar";
 import DefaultBackdrop from "../../components/Backdrop/DefaultBackdrop";
 import ReactJson from '@microlink/react-json-view'
+import ImageUploadField from "../../components/Form/ImageUploadField";
+import {useAuth} from "../../context/useAuth";
 
 
 function descendingComparator(a, b, orderBy) {
@@ -92,54 +110,38 @@ function stableSort(array, comparator) {
 const UploadModal = React.memo((
     {
         open,
-        onClose,
         handleModalClose,
         setRefresh,
         axiosInstance
     }) => {
-    // Modal
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [selectedFile, setSelectedFile] = useState(null);
-
-    // Data submit
-    const formRef = useRef(null);
-
-    const handleUploadButtonClick = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        if (formRef.current) {
-            const formData = new FormData(formRef.current);
-            axiosInstance.post(API.image.imageUpload, formData)
-                .then(() => {
-                    handleModalClose();
-                    // Optionally, reset selectedFile when modal is closed
-                    setSelectedFile(null);
-                    setRefresh(true)
-                })
-                .catch(error => {
-                    console.error('Upload error:', error);
-                });
-
-        }
+    const handleUploadSuccess = (clearPreview) => {
+        clearPreview();
     };
 
-    const handleFileChange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            setSelectedFile(file);
+    // Data submit
 
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewUrl(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
+    const handleSubmit = (values) => {
+        const formData = new FormData();
+        // 将表单数据添加到 FormData
+        formData.append('name', values.name);
+        formData.append('image', values.image);
+        formData.append('is_public', values.is_public)
+        axiosInstance.post(API.image.imageUpload, formData)
+            .then(() => {
+                handleModalClose();
+                // Optionally, reset selectedFile when modal is closed
+                setRefresh(true)
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+            });
+
     };
 
     return (
         <Modal
             open={open}
-            onClose={onClose}
+            onClose={handleModalClose}
             aria-labelledby="upload-modal-title"
             aria-describedby="upload-modal-description"
         >
@@ -156,36 +158,86 @@ const UploadModal = React.memo((
             }}>
                 <Typography variant="h5" component="h2">Upload Image</Typography>
                 <p id="upload-modal-description">Select an image to upload.</p>
-                <form method="post" ref={formRef}>
-                    <TextField
-                        type="text"
-                        name="name"
-                        label="Name"
-                        fullWidth
-                        margin="normal"
-                        variant="outlined"
-                    />
-                    <TextField
-                        type="file"
-                        name="image"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        fullWidth
-                        margin="normal"
-                        variant="outlined"
-                    />
-                    {selectedFile && (
-                        <div>
-                            <p>Selected:</p>
-                            <img src={previewUrl} alt="Preview" style={{maxWidth: '100%', maxHeight: '200px'}}/>
-                        </div>
+
+                <Formik
+                    initialValues={{
+                        name: '',
+                        image: null,
+                        is_public: false
+                }}
+                    validate={values => {
+                        const errors = {};
+                        if (!values.name) {
+                            errors.name = 'Name is required.';
+                        }
+                        if (!values.image) {
+                            errors.image = 'Image is required.';
+                        }
+                        return errors;
+                    }}
+                    onSubmit={(values, {setSubmitting}) => {
+                        handleSubmit(values);
+                        setSubmitting(false);
+                    }}
+                >
+                    {({isSubmitting}) => (
+                        <Form>
+                            <FormGroup>
+                                <FormControl>
+                                    <Field
+                                        as={TextField}
+                                        type="text"
+                                        name="name"
+                                        label="Name"
+                                        fullWidth
+                                        margin="normal"
+                                        variant="outlined"
+                                    />
+                                    <ErrorMessage name="name"/>
+                                    <Field
+                                        name="image"
+                                        component={ImageUploadField}
+                                        label="Image"
+                                        fullWidth
+                                        margin="normal"
+                                        variant="outlined"
+                                        onUploadSuccess={handleUploadSuccess}
+                                    />
+                                    <ErrorMessage name="image"/>
+                                    <Field name="is_public">
+                                        {({field}) => (
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        {...field}
+                                                        checked={field.value}  // 使用 field.value 代替外部的 isPublic 状态
+                                                        onChange={(e) => {
+                                                            field.onChange(e);
+                                                        }}
+                                                    />
+                                                }
+                                                label="Public"
+                                                sx={{marginTop: '16px', marginBottom: '8px'}}
+                                            />
+                                        )
+                                        }
+                                    </Field>
+                                    <FormHelperText>Be cautious, enabling this will make this data visible and
+                                        accessible to everyone.</FormHelperText>
+                                </FormControl>
+                            </FormGroup>
+
+                            <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={26}
+                                 sx={{marginTop: (theme) => theme.spacing(2)}}>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    Submit
+                                </Button>
+                                <Button onClick={handleModalClose}>Close</Button>
+                            </Box>
+                        </Form>
                     )}
-                    <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap={26}
-                         sx={{marginTop: (theme) => theme.spacing(2)}}>
-                        <Button type="button" onClick={(event) => handleUploadButtonClick(event)}>Upload</Button>
-                        {/*<Button onClick={onClose}>Close</Button>*/}
-                    </Box>
-                </form>
+                </Formik>
+
             </Box>
         </Modal>
     );
@@ -219,10 +271,16 @@ function EnhancedTableHead(props) {
             label: 'Size (W x H)',
         },
         {
-            id: 'user',
+            id: 'scope',
             numeric: false,
             disablePadding: false,
-            label: 'User',
+            label: 'Scope',
+        },
+        {
+            id: 'owner',
+            numeric: false,
+            disablePadding: false,
+            label: 'Owner',
         },
         {
             id: 'created_at',
@@ -321,7 +379,7 @@ const DeleteConfirmDialog = React.memo((
                 setRefresh(true);
                 handleDialogClose();
                 setSelected([]);
-            })
+            }).catch(() => {})
     }, [selected, setRefresh, handleDialogClose, setSelected, axiosInstance]);
 
     return (
@@ -752,6 +810,7 @@ const DetectViewModal = React.memo((
 
 const EnhancedTable = React.memo((props) => {
     console.log('RUN EnhancedTable', props)
+    const {userId} = useAuth();
     const {
         rows,
         setRefresh,
@@ -800,24 +859,37 @@ const EnhancedTable = React.memo((props) => {
 
     const handleSelectAllClick = (event) => {
         if (event.target.checked) {
-            const newSelected = rows.map((n) => n.id);
+            const newSelected = rows.map((n) => {
+                if (userId === n.user.id) {
+                    return n.id
+                }
+                return null;
+            })
+            .filter((value) => value !== null);
+            console.log(newSelected)
             setSelected(newSelected);
             return;
         }
         setSelected([]);
     };
 
-    const handleClick = (event, id) => {
+    const handleClick = (event, row) => {
+        const rowId = row.id;
+        const rowUser = row.user;
         // Check if the click is on the modal backdrop
         if (event.target.classList.contains('MuiModal-backdrop')) {
             // Do nothing or close the modal if needed
             return;
         }
-        const selectedIndex = selected.indexOf(id);
+        if (rowUser.id !== userId) {
+            return;
+        }
+
+        const selectedIndex = selected.indexOf(rowId);
         let newSelected = [];
 
         if (selectedIndex === -1) {
-            newSelected = newSelected.concat(selected, id);
+            newSelected = newSelected.concat(selected, rowId);
         } else if (selectedIndex === 0) {
             newSelected = newSelected.concat(selected.slice(1));
         } else if (selectedIndex === selected.length - 1) {
@@ -888,7 +960,7 @@ const EnhancedTable = React.memo((props) => {
     } = useModal();
     const [generatedImageId, setGeneratedImage] = useState(null);
 
-    const handleActionModalOpen = useCallback((action, rowId) => {
+    const handleActionModalOpen = useCallback((action) => {
         console.log('handleActionModalOpen')
         setActionModalTitle(capitalize(action));
         setActionModalOpen(true);
@@ -1053,7 +1125,7 @@ const EnhancedTable = React.memo((props) => {
                             {({isSubmitting}) => (
                                 <Form>
                                     <FormControl fullWidth>
-                                        <InputLabel id="demo-simple-select-label">Axis</InputLabel>
+                                        <InputLabel id="action-flip-axis-select-label">Axis</InputLabel>
                                         <Field
                                             as={Select}
                                             name="axis"
@@ -1145,7 +1217,7 @@ const EnhancedTable = React.memo((props) => {
                             {({isSubmitting}) => (
                                 <Form>
                                     <FormControl fullWidth>
-                                        <InputLabel id="demo-simple-select-label">Mode</InputLabel>
+                                        <InputLabel id="action-blur-mode-select-label">Mode</InputLabel>
                                         <Field
                                             as={Select}
                                             name="mode"
@@ -1178,7 +1250,7 @@ const EnhancedTable = React.memo((props) => {
 
         setActionModalTitle(capitalize(action))
         setActionModalContent(modelContent)
-        handleActionModalOpen(action, rowId);
+        handleActionModalOpen(action);
 
         setMenuAnchorEl((prevMenuAnchorEl) => ({
             ...prevMenuAnchorEl,
@@ -1219,6 +1291,16 @@ const EnhancedTable = React.memo((props) => {
         setGeneratedImagesModalOpen(true);
     }
 
+    const handlePublicSwitchChange = (event, rowId) => {
+        event.stopPropagation();
+        axiosInstance.patch(API.image.imageUpdate.replace('{imageId}', rowId), {
+            'is_public': event.target.checked
+        })
+            .then(() => {
+                setRefresh(true)
+            })
+    }
+
     return (
         <Paper sx={{width: '100%', mb: 2}}>
             <EnhancedTableToolbar
@@ -1247,11 +1329,11 @@ const EnhancedTable = React.memo((props) => {
                         {visibleRows.map((row, index) => {
                             const isItemSelected = isSelected(row.id);
                             const labelId = `enhanced-table-checkbox-${index}`;
-
+                            const isOwner = userId === row.user.id;
                             return (
                                 <TableRow
                                     hover
-                                    onClick={(event) => handleClick(event, row.id)}
+                                    onClick={(event) => handleClick(event, row)}
                                     role="checkbox"
                                     aria-checked={isItemSelected}
                                     tabIndex={-1}
@@ -1288,6 +1370,21 @@ const EnhancedTable = React.memo((props) => {
                                         />
                                     </TableCell>
                                     <TableCell align="left">{`${row.width}x${row.height}`}</TableCell>
+                                    <TableCell align="left">
+                                        {isOwner ? (
+                                        <Switch
+                                            size="small"
+                                            checked={row.is_public}
+                                            onClick={(event) => handlePublicSwitchChange(event, row.id)}
+                                        />
+                                        ) : (
+                                        <Switch
+                                            size="small"
+                                            checked={row.is_public}
+                                            disabled
+                                        />
+                                        )}
+                                    </TableCell>
                                     <TableCell align="left">{row.user.username}</TableCell>
                                     <TableCell align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
                                     <TableCell align="left">{
@@ -1389,7 +1486,6 @@ const EnhancedTable = React.memo((props) => {
             />
             <UploadModal
                 open={uploadModalOpen}
-                onClose={handleUploadModalClose}
                 handleModalClose={handleUploadModalClose}
                 setRefresh={setRefresh}
                 axiosInstance={axiosInstance}
@@ -1415,7 +1511,7 @@ export default function ImageListPage() {
         if (refresh) {
             console.log('useEffect refreshData')
             setRefresh(false);
-            axiosInstance.get(API.image.imageList)
+            defaultAxios.get(API.image.imageList)
                 .then(response => {
                     setRows(response.data.results);
                 })
