@@ -11,7 +11,6 @@ import ImageList from "./pages/image/ImageList";
 
 
 const App = () => {
-    console.log('RUN App')
     const theme = createTheme({
         spacing: 8,  // default
     });

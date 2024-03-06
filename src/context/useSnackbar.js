@@ -5,7 +5,6 @@ import Alert from "@mui/material/Alert";
 const SnackbarContext = createContext();
 
 export const SnackbarProvider = memo(({children}) => {
-    console.log('SnackbarProvider')
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('info');

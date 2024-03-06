@@ -5,7 +5,6 @@ import useAxios, {defaultAxios} from "../services/useAxios";
 const AuthContext = React.createContext(null);
 
 export const AuthProvider = React.memo(({children}) => {
-    console.log('RUN AuthProvider')
     const [isAuthenticated, setIsAuthenticated] = React.useState(true);
     const [username, setUsername] = React.useState('');
     const [userId, setUserId] = React.useState(null);
@@ -42,8 +41,6 @@ export const AuthProvider = React.memo(({children}) => {
             })
             .then(
                 response => {
-                    console.log('response', response)
-                    console.debug('login successfully')
                     setIsAuthenticated(true);
                     const data = response.data;
                     setUsername(data.user.username); // Set username if available

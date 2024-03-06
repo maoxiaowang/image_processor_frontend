@@ -3,7 +3,6 @@ import {Slide, Snackbar} from "@mui/material";
 import Alert from "@mui/material/Alert";
 
 const AlertSnackbar = ({open, onClose, severity, message}) => {
-        console.log('RUN GlobalSnackbar')
         return (
             <Snackbar
                 open={open}

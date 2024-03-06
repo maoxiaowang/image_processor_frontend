@@ -6,7 +6,6 @@ import {Grid} from "@mui/material";
 import '../../assets/styles/auth/Login.css'
 import {useNavigate} from 'react-router-dom';
 import ROUTES from "../../config/route";
-import {useSnackbar} from "../../context/useSnackbar";
 import {useAuth} from "../../context/useAuth";
 import Typography from "@mui/material/Typography";
 import InputContainer from "../../components/InputContainer";
@@ -17,7 +16,6 @@ import useBackdrop from "../../hooks/useBackdrop";
 const LoginPage = () => {
 
     const {backdropOpen, openBackdrop, closeBackdrop} = useBackdrop();
-    const {openSnackbar} = useSnackbar();
     const navigate = useNavigate();
 
     const auth = useAuth();
@@ -33,7 +31,7 @@ const LoginPage = () => {
                 await auth.login(values.username, values.password)
                 navigate(ROUTES.homePage, {replace: true})
             } catch (err) {
-                openSnackbar('用户名不存在或密码错误', "error")
+                // openSnackbar('用户名不存在或密码错误', "error")
             } finally {
                 closeBackdrop();
             }

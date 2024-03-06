@@ -39,7 +39,6 @@ const useAxios = () => {
                 closeBackdrop();
                 if (error.response) {
                     const errStatus = error.response.status;
-                    console.log('errStatus', errStatus)
                     if (errStatus === 400) {
                         const errData = error.response.data;
                         if (Array.isArray(errData)) {
@@ -58,7 +57,6 @@ const useAxios = () => {
                         }
                         return Promise.reject(error)
                     } else if (errStatus === 401) {
-                        console.log('..........  401')
                         // 如果响应状态码是 401，执行重定向到登录页面的操作
                         openSnackbar('Unauthorized', "error");
                     } else if (errStatus === 403) {
@@ -68,12 +66,12 @@ const useAxios = () => {
                     } else if (errStatus >= 500) {
                         openSnackbar('Server error', 'error')
                     } else {
-                        console.log(error.response)
                         // openSnackbar(error.response.data.detail, 'error')
                     }
                     return Promise.reject(error); // 返回一个被拒绝的 Promise，以便在调用方处理
                 } else {
                     if (error.code === 'ERR_NETWORK') {
+                        console.log('ERR_NETWORK')
                         openSnackbar('Network error', "error");
                     } else {
                         openSnackbar('System error', 'error')

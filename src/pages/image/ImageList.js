@@ -27,7 +27,7 @@ import useAxios, {defaultAxios} from "../../services/useAxios";
 import API from "../../config/api";
 import {
     Avatar,
-    Breadcrumbs,
+    Breadcrumbs, CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
@@ -152,7 +152,6 @@ const UploadModal = React.memo((
                 transform: 'translate(-50%, -50%)',
                 width: 400,
                 bgcolor: 'background.paper',
-                border: '2px solid #000',
                 boxShadow: 24,
                 p: 4,
             }}>
@@ -164,7 +163,7 @@ const UploadModal = React.memo((
                         name: '',
                         image: null,
                         is_public: false
-                }}
+                    }}
                     validate={values => {
                         const errors = {};
                         if (!values.name) {
@@ -274,7 +273,7 @@ function EnhancedTableHead(props) {
             id: 'scope',
             numeric: false,
             disablePadding: false,
-            label: 'Scope',
+            label: 'Public',
         },
         {
             id: 'owner',
@@ -370,16 +369,15 @@ const DeleteConfirmDialog = React.memo((
         handleDialogClose,
         axiosInstance
     }) => {
-    console.log('RUN DeleteConfirmDialog', selected)
     const handleImageDeleteConfirm = useCallback(() => {
         const imageIds = selected.join(",");
         axiosInstance.delete(API.image.imageMultiDelete.replace('{imageIds}', imageIds))
             .then(result => {
-                console.log(result)
                 setRefresh(true);
                 handleDialogClose();
                 setSelected([]);
-            }).catch(() => {})
+            }).catch(() => {
+        })
     }, [selected, setRefresh, handleDialogClose, setSelected, axiosInstance]);
 
     return (
@@ -409,7 +407,6 @@ const DeleteConfirmDialog = React.memo((
 
 
 const EnhancedTableToolbar = React.memo((props) => {
-    console.log('RUN EnhancedTableToolbar', props)
     const {
         numSelected,
         handleUploadModalOpen,
@@ -521,13 +518,13 @@ const ShowImageModal = (props) => {
                     </Grid>
                 </Grid>
                 {loading ? (
-                        <div style={{ display: 'flex', height: '300px' }}>
-        <Skeleton variant="rectangular" width="100%" height='300px'
-                  align="center"
-                  component="div">
-                Loading
-        </Skeleton>
-    </div>
+                    <div style={{display: 'flex', height: '300px'}}>
+                        <Skeleton variant="rectangular" width="100%" height='300px'
+                                  align="center"
+                                  component="div">
+                            Loading
+                        </Skeleton>
+                    </div>
                 ) : (
                     <img
                         src={src}
@@ -618,150 +615,149 @@ const ActionModal = (
     const handleSaveAsOriginal = () => {
         axiosInstance.put(API.image.imageElevate.replace('{generatedImageId}', generateImageId), {})
             .then((response) => {
-                console.log(response.data)
                 openSnackbar('Saved successfully.', 'success');
                 handleShowImageModalClose();
                 setRefresh(true);
-        })
+            })
     };
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      aria-labelledby="action-modal-title"
-      aria-describedby="action-modal-description"
-    >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 400,
-          bgcolor: 'white',
-          boxShadow: 24,
-          p: 4,
-        }}
-      >
-        <h2 id="action-modal-title">{modalTitle}</h2>
-          {modalContent}
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            aria-labelledby="action-modal-title"
+            aria-describedby="action-modal-description"
+        >
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 400,
+                    bgcolor: 'white',
+                    boxShadow: 24,
+                    p: 4,
+                }}
+            >
+                <h2 id="action-modal-title">{modalTitle}</h2>
+                {modalContent}
 
-          <ShowImageModal
-              open={showImageModalOpen}
-              onClose={handleShowImageModalClose}
-              src={showImageSrc}
-              title={showImageTitle}
-              bottom={
-                  <Grid container justifyContent="flex-end" sx={{marginTop: (theme) => theme.spacing(2)}}>
-                      <Button onClick={handleSaveAsOriginal}>As original</Button>
-                  </Grid>
-              }
-          />
-      </Box>
-    </Modal>
-  )
+                <ShowImageModal
+                    open={showImageModalOpen}
+                    onClose={handleShowImageModalClose}
+                    src={showImageSrc}
+                    title={showImageTitle}
+                    bottom={
+                        <Grid container justifyContent="flex-end" sx={{marginTop: (theme) => theme.spacing(2)}}>
+                            <Button onClick={handleSaveAsOriginal}>As original</Button>
+                        </Grid>
+                    }
+                />
+            </Box>
+        </Modal>
+    )
 };
 
 
 const GeneratedImagesDialog = React.memo((
-  {
-    open,
-    handleClose,
-    title,
-    data,
-  }) => {
+    {
+        open,
+        handleClose,
+        title,
+        data,
+    }) => {
     const [innerModalOpen, setInnerModalOpen] = useState(false);
     const [innerModalTitle, setInnerModalTitle] = useState('');
     const [innerModalImageSrc, setInnerModalImageSrc] = useState('');
 
     const handleInnerModalOpen = useCallback((src, action, id) => {
-      setInnerModalTitle(`${action}-${id}`);
-      setInnerModalImageSrc(src);
-      setInnerModalOpen(true);
+        setInnerModalTitle(`${action}-${id}`);
+        setInnerModalImageSrc(src);
+        setInnerModalOpen(true);
     }, []);
 
     const handleInnerModalClose = useCallback(() => {
-      setInnerModalOpen(false);
+        setInnerModalOpen(false);
     }, []);
 
     const renderActionIcon = (action) => {
-      switch (action.toLowerCase()) {
-        case 'crop':
-          return <CropIcon />;
-        case 'flip':
-          return <FlipIcon />;
-        case 'rotate':
-          return <RotateIcon />;
-        case 'blur':
-          return <BlurIcon />;
-        default:
-          return <InfoIcon />;
-      }
+        switch (action.toLowerCase()) {
+            case 'crop':
+                return <CropIcon/>;
+            case 'flip':
+                return <FlipIcon/>;
+            case 'rotate':
+                return <RotateIcon/>;
+            case 'blur':
+                return <BlurIcon/>;
+            default:
+                return <InfoIcon/>;
+        }
     };
 
     return (
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        maxWidth="md"
-        fullWidth
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-      >
-        <DialogTitle>
-          <Grid container spacing={2} sx={{ marginBottom: (theme) => theme.spacing(1) }}>
-            <Grid item xs={8}>
-              <Typography variant="h6" component="h2">
-                {title}
-              </Typography>
-            </Grid>
-            <Grid item xs={4} textAlign="right">
-              <Button onClick={handleClose}>Close</Button>
-            </Grid>
-          </Grid>
-        </DialogTitle>
-        <DialogContent dividers sx={{ overflowY: 'scroll' }}>
-          <ImageList variant="masonry" cols={4} gap={8}>
-            {data.map((item) => (
-              <ImageListItem key={item.id}>
-                <Tooltip title="Click to see original image" placement="top">
-                  <img
-                    srcSet={`${item.processed_image}?w=248&fit=crop&auto=format&dpr=2 2x`}
-                    src={`${item.processed_image}?w=248&fit=crop&auto=format`}
-                    alt={item.action}
-                    loading="lazy"
-                    onClick={() => handleInnerModalOpen(item.processed_image, item.action, item.id)}
-                    style={{ width: '100%', cursor: 'pointer' }}
-                  />
-                </Tooltip>
-                <ImageListItemBar
-                  title={`${item.action}-${item.id}`}
-                  subtitle={`${item.width}x${item.height}`}
-                  actionIcon={
-                    <IconButton
-                      sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                      aria-label={`info about ${item.action}`}
-                    >
-                      {renderActionIcon(item.action)}
-                    </IconButton>
-                  }
-                  position="below"
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="md"
+            fullWidth
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+        >
+            <DialogTitle>
+                <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
+                    <Grid item xs={8}>
+                        <Typography variant="h6" component="h2">
+                            {title}
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={4} textAlign="right">
+                        <Button onClick={handleClose}>Close</Button>
+                    </Grid>
+                </Grid>
+            </DialogTitle>
+            <DialogContent dividers sx={{overflowY: 'scroll'}}>
+                <ImageList variant="masonry" cols={4} gap={8}>
+                    {data.map((item) => (
+                        <ImageListItem key={item.id}>
+                            <Tooltip title="Click to see original image" placement="top">
+                                <img
+                                    srcSet={`${item.processed_image}?w=248&fit=crop&auto=format&dpr=2 2x`}
+                                    src={`${item.processed_image}?w=248&fit=crop&auto=format`}
+                                    alt={item.action}
+                                    loading="lazy"
+                                    onClick={() => handleInnerModalOpen(item.processed_image, item.action, item.id)}
+                                    style={{width: '100%', cursor: 'pointer'}}
+                                />
+                            </Tooltip>
+                            <ImageListItemBar
+                                title={`${item.action}-${item.id}`}
+                                subtitle={`${item.width}x${item.height}`}
+                                actionIcon={
+                                    <IconButton
+                                        sx={{color: 'rgba(255, 255, 255, 0.54)'}}
+                                        aria-label={`info about ${item.action}`}
+                                    >
+                                        {renderActionIcon(item.action)}
+                                    </IconButton>
+                                }
+                                position="below"
+                            />
+                        </ImageListItem>
+                    ))}
+                </ImageList>
+
+                <ShowImageModal
+                    open={innerModalOpen}
+                    onClose={handleInnerModalClose}
+                    src={innerModalImageSrc}
+                    title={innerModalTitle}
+
                 />
-              </ImageListItem>
-            ))}
-          </ImageList>
-
-          <ShowImageModal
-            open={innerModalOpen}
-            onClose={handleInnerModalClose}
-            src={innerModalImageSrc}
-            title={innerModalTitle}
-
-          />
-        </DialogContent>
-      </Dialog>
+            </DialogContent>
+        </Dialog>
     );
-  });
+});
 
 
 const DetectViewModal = React.memo((
@@ -773,48 +769,47 @@ const DetectViewModal = React.memo((
         onDetect
     }) => {
 
-  return (
-      <Modal
-          open={open}
-          onClose={handleClose}
-          aria-labelledby="modal-modal-title"
-          aria-describedby="modal-modal-description"
-          sx={{overflow:'scroll'}}
-      >
-          <Box className="showImageModalBox">
-              <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
-                  <Grid item xs={8}>
-                      <Typography variant="h6" component="h2">
-                          {title}
-                      </Typography>
-                  </Grid>
-                  <Grid item xs={4} textAlign="right">
-                      <Button onClick={handleClose}>Close</Button>
-                  </Grid>
-              </Grid>
-              <Box sx={{marginY: (theme) => theme.spacing(4)}}>
-                  <ReactJson src={jsonObject} name={false} style={{fontFamily: 'initial'}} />
-              </Box>
-              <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
-                  <Grid item xs={4} textAlign="left">
-                      <Button onClick={(event) => onDetect(event)}>Detect</Button>
-                  </Grid>
-              </Grid>
-          </Box>
-      </Modal>
+    return (
+        <Modal
+            open={open}
+            onClose={handleClose}
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+            sx={{overflow: 'scroll'}}
+        >
+            <Box className="showImageModalBox">
+                <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
+                    <Grid item xs={8}>
+                        <Typography variant="h6" component="h2">
+                            {title}
+                        </Typography>
+                    </Grid>
+                    <Grid item xs={4} textAlign="right">
+                        <Button onClick={handleClose}>Close</Button>
+                    </Grid>
+                </Grid>
+                <Box sx={{marginY: (theme) => theme.spacing(4)}}>
+                    <ReactJson src={jsonObject} name={false} style={{fontFamily: 'initial'}}/>
+                </Box>
+                <Grid container spacing={2} sx={{marginBottom: (theme) => theme.spacing(1)}}>
+                    <Grid item xs={4} textAlign="left">
+                        <Button onClick={(event) => onDetect(event)}>Detect</Button>
+                    </Grid>
+                </Grid>
+            </Box>
+        </Modal>
 
-  )
+    )
 });
 
 
-
 const EnhancedTable = React.memo((props) => {
-    console.log('RUN EnhancedTable', props)
     const {userId} = useAuth();
     const {
         rows,
         setRefresh,
-        axiosInstance
+        axiosInstance,
+        refreshing
     } = props;
 
     const [order, setOrder] = React.useState('desc');
@@ -865,8 +860,7 @@ const EnhancedTable = React.memo((props) => {
                 }
                 return null;
             })
-            .filter((value) => value !== null);
-            console.log(newSelected)
+                .filter((value) => value !== null);
             setSelected(newSelected);
             return;
         }
@@ -904,12 +898,10 @@ const EnhancedTable = React.memo((props) => {
     };
 
     const handleChangePage = (event, newPage) => {
-        console.log('handleChangePage')
         setPage(newPage);
     };
 
     const handleChangeRowsPerPage = (event) => {
-        console.log('handleChangeRowsPerPage', event.target.value)
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
@@ -933,7 +925,6 @@ const EnhancedTable = React.memo((props) => {
     const [menuAnchorEl, setMenuAnchorEl] = useState({msg: "loading"});
 
     const handleMenuOpen = useCallback((event, rowId) => {
-        console.log('RUN handleMenuOpen')
         event.stopPropagation();
         setMenuAnchorEl((prevMenuAnchorEl) => ({
             ...prevMenuAnchorEl,
@@ -942,7 +933,6 @@ const EnhancedTable = React.memo((props) => {
     }, [setMenuAnchorEl]);
 
     const handleMenuClose = useCallback((event, reason, rowId) => {
-        console.log('RUN handleMenuClose', 'reason: ' + reason)
         event.stopPropagation();
         setMenuAnchorEl((prevMenuAnchorEl) => ({
             ...prevMenuAnchorEl,
@@ -961,13 +951,11 @@ const EnhancedTable = React.memo((props) => {
     const [generatedImageId, setGeneratedImage] = useState(null);
 
     const handleActionModalOpen = useCallback((action) => {
-        console.log('handleActionModalOpen')
         setActionModalTitle(capitalize(action));
         setActionModalOpen(true);
     }, [setActionModalOpen, setActionModalTitle])
 
     const handleActionModalClose = useCallback(() => {
-        console.log('handleActionModalOpen')
         setActionModalOpen(false)
     }, [setActionModalOpen]);
 
@@ -980,7 +968,6 @@ const EnhancedTable = React.memo((props) => {
     }, []);
 
     const handleActionSubmit = useCallback((action, rowId, values) => {
-        console.log('handleActionSubmit', action, rowId)
         const url = API.image.imageProcess.replace('{imageId}', rowId).replace('{action}', action)
         axiosInstance.put(url, values).then((response) => {
             const data = response.data;
@@ -991,7 +978,6 @@ const EnhancedTable = React.memo((props) => {
             setGeneratedImage(data.id);
             setRefresh(true);
         }).catch((reason) => {
-            console.log('reason', reason)
         })
     }, [setRefresh, axiosInstance])
 
@@ -1010,7 +996,6 @@ const EnhancedTable = React.memo((props) => {
     }
     const handleDetectViewClick = (event, rowId, imageName) => {
         event.stopPropagation();
-         console.log('handleDetectViewClick')
         setDetectModalTitle(imageName)
         handleDetectModalOpen(rowId)
 
@@ -1022,7 +1007,6 @@ const EnhancedTable = React.memo((props) => {
     }
 
     const handleImageDetectSubmit = (event) => {
-        console.log('handleImageDetectSubmit', openedRowId)
         event.preventDefault();
         const url = API.image.imageProcess.replace('{imageId}', String(openedRowId)).replace('{action}', 'detect')
         axiosInstance.put(url, {}).then((response) => {
@@ -1030,12 +1014,10 @@ const EnhancedTable = React.memo((props) => {
             setDetectModalJsonObject(jsonObject);
             setRefresh(true);
         }).catch((reason) => {
-            console.log('reason', reason)
         })
     };
 
     const handleMenuItemClick = (event, action, rowId) => {
-        console.log('RUN handleMenuItemClick')
         event.preventDefault();
         event.stopPropagation();
 
@@ -1326,107 +1308,120 @@ const EnhancedTable = React.memo((props) => {
                         rowCount={rows.length}
                     />
                     <TableBody>
-                        {visibleRows.map((row, index) => {
-                            const isItemSelected = isSelected(row.id);
-                            const labelId = `enhanced-table-checkbox-${index}`;
-                            const isOwner = userId === row.user.id;
-                            return (
-                                <TableRow
-                                    hover
-                                    onClick={(event) => handleClick(event, row)}
-                                    role="checkbox"
-                                    aria-checked={isItemSelected}
-                                    tabIndex={-1}
-                                    key={row.id}
-                                    selected={isItemSelected}
-                                    sx={{cursor: 'pointer'}}
-                                >
-                                    <TableCell padding="checkbox">
-                                        <Checkbox
-                                            color="primary"
-                                            checked={isItemSelected}
-                                            inputProps={{
-                                                'aria-labelledby': labelId,
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell
-                                        component="th"
-                                        id={labelId}
-                                        scope="row"
-                                        padding="none"
+                        {refreshing ? (
+                            <TableRow>
+                                <TableCell colSpan={11} align="center">
+                                    <CircularProgress size={32} />
+                                    <Typography variant="subtitle2">Loading</Typography>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            visibleRows.map((row, index) => {
+                                const isItemSelected = isSelected(row.id);
+                                const labelId = `enhanced-table-checkbox-${index}`;
+                                const isOwner = userId === row.user.id;
+                                return (
+                                    <TableRow
+                                        hover
+                                        onClick={(event) => handleClick(event, row)}
+                                        role="checkbox"
+                                        aria-checked={isItemSelected}
+                                        tabIndex={-1}
+                                        key={row.id}
+                                        selected={isItemSelected}
+                                        sx={{cursor: 'pointer'}}
                                     >
-                                        {row.name}
-                                    </TableCell>
-                                    <TableCell align="left">
-                                        <Avatar
-                                            src={row.thumbnail}
-                                            alt="Thumbnail"
-                                            onClick={(e) => handleThumbnailClick(e, row.image, row.name)}
-                                            sx={{
-                                                maxWidth: '100%',
-                                                maxHeight: theme => theme.spacing(5)
-                                            }}
-                                        />
-                                    </TableCell>
-                                    <TableCell align="left">{`${row.width}x${row.height}`}</TableCell>
-                                    <TableCell align="left">
-                                        {isOwner ? (
-                                        <Switch
-                                            size="small"
-                                            checked={row.is_public}
-                                            onClick={(event) => handlePublicSwitchChange(event, row.id)}
-                                        />
-                                        ) : (
-                                        <Switch
-                                            size="small"
-                                            checked={row.is_public}
-                                            disabled
-                                        />
-                                        )}
-                                    </TableCell>
-                                    <TableCell align="left">{row.user.username}</TableCell>
-                                    <TableCell align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
-                                    <TableCell align="left">{
-                                        <Button onClick={(event) => handleDetectViewClick(event, row.id, row.name)} size="small">View</Button>
-                                    }
-                                    </TableCell>
-                                    <TableCell align="left">{
-                                        row.generation_num > 0 ?
-                                            <Button size="small" onClick={(event) => handleGenerationViewClick(event, row.id, row.name)}>
-                                                View
-                                            </Button> : <Button size="small" disabled>View</Button>
-                                    }
-                                    </TableCell>
-                                    <TableCell align="left">
-                                        <IconButton
-                                            aria-label="more"
-                                            id={`actions-menu-${row.id}`}
-                                            aria-controls={`actions-menu-${row.id}`}
-                                            aria-haspopup="true"
-                                            onClick={(event) => handleMenuOpen(event, row.id)}
+                                        <TableCell padding="checkbox">
+                                            <Checkbox
+                                                color="primary"
+                                                checked={isItemSelected}
+                                                inputProps={{
+                                                    'aria-labelledby': labelId,
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell
+                                            component="th"
+                                            id={labelId}
+                                            scope="row"
+                                            padding="none"
                                         >
-                                            <MoreVertIcon/>
-                                        </IconButton>
+                                            {row.name}
+                                        </TableCell>
+                                        <TableCell align="left">
+                                            <Avatar
+                                                src={row.thumbnail}
+                                                alt="Thumbnail"
+                                                onClick={(e) => handleThumbnailClick(e, row.image, row.name)}
+                                                sx={{
+                                                    maxWidth: '100%',
+                                                    maxHeight: theme => theme.spacing(5)
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell align="left">{`${row.width}x${row.height}`}</TableCell>
+                                        <TableCell align="left">
+                                            {isOwner ? (
+                                                <Switch
+                                                    size="small"
+                                                    checked={row.is_public}
+                                                    onClick={(event) => handlePublicSwitchChange(event, row.id)}
+                                                />
+                                            ) : (
+                                                <Switch
+                                                    size="small"
+                                                    checked={row.is_public}
+                                                    disabled
+                                                />
+                                            )}
+                                        </TableCell>
+                                        <TableCell align="left">{row.user.username}</TableCell>
+                                        <TableCell
+                                            align="left">{format(parseISO(row.created_at), 'yyyy/MM/dd HH:mm:ss')}</TableCell>
+                                        <TableCell align="left">{
+                                            <Button onClick={(event) => handleDetectViewClick(event, row.id, row.name)}
+                                                    size="small">View</Button>
+                                        }
+                                        </TableCell>
+                                        <TableCell align="left">{
+                                            row.generation_num > 0 ?
+                                                <Button size="small"
+                                                        onClick={(event) => handleGenerationViewClick(event, row.id, row.name)}>
+                                                    View
+                                                </Button> : <Button size="small" disabled>View</Button>
+                                        }
+                                        </TableCell>
+                                        <TableCell align="left">
+                                            <IconButton
+                                                aria-label="more"
+                                                id={`actions-menu-${row.id}`}
+                                                aria-controls={`actions-menu-${row.id}`}
+                                                aria-haspopup="true"
+                                                onClick={(event) => handleMenuOpen(event, row.id)}
+                                            >
+                                                <MoreVertIcon/>
+                                            </IconButton>
 
-                                        <RowActionMenu
-                                            rowId={row.id}
-                                            menuAnchorEl={menuAnchorEl}
-                                            handleMenuClose={handleMenuClose}
-                                            handleMenuItemClick={handleMenuItemClick}
-                                        />
+                                            <RowActionMenu
+                                                rowId={row.id}
+                                                menuAnchorEl={menuAnchorEl}
+                                                handleMenuClose={handleMenuClose}
+                                                handleMenuItemClick={handleMenuItemClick}
+                                            />
 
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
+
                         {emptyRows > 0 && (
                             <TableRow
                                 style={{
-                                    height: (53) * emptyRows,
+                                    height: (73) * emptyRows,
                                 }}
                             >
-                                <TableCell colSpan={6}/>
+                                <TableCell colSpan={11}/>
                             </TableRow>
                         )}
                     </TableBody>
@@ -1496,27 +1491,30 @@ const EnhancedTable = React.memo((props) => {
 
 
 export default function ImageListPage() {
-    console.log('RUN ImageListPage')
     const {backdropOpen, axiosInstance} = useAxios();
 
     useEffect(() => {
-        console.log('ImageListPage component mounted');
+
     }, []);
 
     // Table
     const [rows, setRows] = React.useState([]);
     // Data refreshing
     const [refresh, setRefresh] = React.useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     useEffect(() => {
         if (refresh) {
-            console.log('useEffect refreshData')
             setRefresh(false);
+            setRefreshing(true);
             defaultAxios.get(API.image.imageList)
                 .then(response => {
                     setRows(response.data.results);
                 })
                 .catch(error => {
                     console.error('Error fetching data:', error);
+                })
+                .finally(() => {
+                    setRefreshing(false)
                 })
         }
     }, [refresh, axiosInstance]);
@@ -1541,6 +1539,7 @@ export default function ImageListPage() {
                 rows={rows}
                 setRefresh={setRefresh}
                 axiosInstance={axiosInstance}
+                refreshing={refreshing}
             />
             <DefaultBackdrop open={backdropOpen}/>
         </Container>

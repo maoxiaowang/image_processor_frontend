@@ -11,14 +11,19 @@ import ImageIcon from '@mui/icons-material/Image'
 import NewsIcon from '@mui/icons-material/Newspaper'
 import LogoutIcon from '@mui/icons-material/Logout';
 import {useAuth} from "../context/useAuth";
-import {Link as RouterLink} from 'react-router-dom'
+import {Link as RouterLink, useNavigate} from 'react-router-dom'
 import ROUTES from "../config/route";
 import {Drawer, Link, List, ListItem, ListItemButton, ListItemIcon, ListItemText} from "@mui/material";
 import {useEffect} from "react";
+import {useSnackbar} from "../context/useSnackbar";
+import useBackdrop from "../hooks/useBackdrop";
+import DefaultBackdrop from "./Backdrop/DefaultBackdrop";
 
 const ButtonAppBar = React.memo(() => {
     const {isAuthenticated, logout, username} = useAuth();
-
+    const {backdropOpen, openBackdrop, closeBackdrop} = useBackdrop();
+    const navigate = useNavigate();
+    const {openSnackbar} = useSnackbar();
     const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
 
     const handleDrawerOpen = () => {
@@ -30,12 +35,24 @@ const ButtonAppBar = React.memo(() => {
     };
 
     useEffect(() => {
-        console.log('useEffect AppBar');
         // ... existing code
     }, []);
 
+    const handleLogout = async () => {
+        openBackdrop();
+            try {
+                await logout()
+                navigate(ROUTES.homePage, {replace: true})
+            } catch (err) {
+                openSnackbar('Unknown Error', "error")
+            } finally {
+                closeBackdrop();
+            }
+    }
+
     return (
         <Box sx={{flexGrow: 1}}>
+            <DefaultBackdrop open={backdropOpen}/>
             <AppBar position="static">
                 <Toolbar>
                     <IconButton
@@ -59,7 +76,7 @@ const ButtonAppBar = React.memo(() => {
                                 color="inherit"
                                 aria-label="logout"
                                 sx={{mr: 2}}
-                                onClick={logout}
+                                onClick={handleLogout}
                             >
                                 <LogoutIcon/>
                             </IconButton>
