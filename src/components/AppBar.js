@@ -115,14 +115,14 @@ const ButtonAppBar = React.memo(() => {
                         </ListItemButton>
                     </ListItem>
 
-                    <ListItem>
-                        <ListItemButton>
-                            <ListItemIcon>
-                                <NewsIcon/>
-                            </ListItemIcon>
-                            <ListItemText primary={'News'}/>
-                        </ListItemButton>
-                    </ListItem>
+                    {/*<ListItem>*/}
+                    {/*    <ListItemButton>*/}
+                    {/*        <ListItemIcon>*/}
+                    {/*            <NewsIcon/>*/}
+                    {/*        </ListItemIcon>*/}
+                    {/*        <ListItemText primary={'News'}/>*/}
+                    {/*    </ListItemButton>*/}
+                    {/*</ListItem>*/}
                 </List>
             </Drawer>
         </Box>

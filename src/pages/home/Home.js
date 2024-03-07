@@ -35,12 +35,6 @@ const Home = () => {
             image: process.env.PUBLIC_URL + '/images/cover_13.jpg',
             link: ROUTES.image.imageListPage,
         },
-        {
-            title: 'News',
-            description: 'Read the latest news.',
-            image: process.env.PUBLIC_URL + '/images/cover_18.jpg',
-            link: '/news',
-        },
         // Add more sections as needed
     ];
 
